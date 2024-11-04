@@ -1,0 +1,39 @@
+{% load static %}
+
+{% load django_bootstrap5 %}
+
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+<style> ul.errorlist { display: none; } </style>
+<nav class="navbar navbar-dark bg-dark">
+    <div class="ms-auto">
+        {% if user.is_authenticated %}
+        <a class="btn btn-outline-light me-1" href="{% url 'home' %}">Home</a>
+        <form method="post" style="display: inline;" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-light me-1">Logout</button>
+        </form>
+        {% else %}
+        <a class="btn btn-outline-light me-1" href="{% url 'login' %}">Login</a>
+        <a class="btn btn-outline-light me-1" href="{% url 'signup' %}">Signup</a>
+        {% endif %}
+    </div>
+</nav>
+<div class="my-5 text-center container">
+    {% block content %}
+    {% endblock %}
+    {% if form.errors %}
+    <div id="form-error" class="alert alert-danger my-5">
+        {% for key, value in form.errors.items %}
+        {{ value.as_text }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
