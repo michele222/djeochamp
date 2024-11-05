@@ -1,0 +1,15 @@
+{% extends "master.html" %}
+
+{% block title %}
+  Game details
+{% endblock %}
+
+{% block content %}
+  <div class="mycard">
+    <h1>{{ object.name }}</h1>
+    <p>ID {{ object.id }}</p>
+    <p>Date created {{ object.created }}</p>
+    <p>Correct guesses {{ object.guesses }}</p>
+    <p>Winner {{ object.winner }}</p>
+  </div>
+{% endblock %}

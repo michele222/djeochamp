@@ -1,0 +1,23 @@
+{% extends "master.html" %}
+
+{% block title %}
+List of games
+{% endblock %}
+
+
+{% block content %}
+<div class="mycard">
+    <h1>Games</h1>
+    <div class="row row-cols3 g-2">
+        {% for game in object_list %}
+        <div class="col">
+            <div class="p-3 border" onclick="window.location = '{% url 'games.detail' game.id %}'">
+                <h3>
+                    {{ game.name }}
+                </h3>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
