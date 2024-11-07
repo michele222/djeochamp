@@ -1,0 +1,28 @@
+{% extends "master.html" %}
+
+{% load static %}
+
+{% block title %}
+List of countries
+{% endblock %}
+
+
+{% block content %}
+<div class="mycard">
+    <h1>Countries</h1>
+    <div class="row row-cols3 g-2">
+        {% for country in object_list %}
+        <div class="col">
+            {% with 'flags/'|add:country.id|add:'.png' as flag %}
+            <div class="p-3 border" style="background-image: url('{% static flag %}'); background-size: cover;"
+                 onclick="window.location = '{% url 'countries.detail' country.id %}'">
+                {% endwith %}
+                <h3>
+                    {{ country.name }}
+                </h3>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

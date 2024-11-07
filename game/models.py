@@ -45,3 +45,6 @@ class Match(models.Model):
     country2 = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="matches2")
     winner = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="match_wins", null=True, blank=True)
     guess = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="match_guesses", null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.country1.name} - {self.country2.name}'

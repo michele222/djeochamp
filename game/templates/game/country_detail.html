@@ -1,15 +1,17 @@
 {% extends "master.html" %}
 
+{% load static %}
+
 {% block title %}
-  Game details
+  Country details
 {% endblock %}
 
 {% block content %}
   <div class="mycard">
     <h1>{{ object.name }}</h1>
     <p>ID {{ object.id }}</p>
-    <p>Date created {{ object.created }}</p>
-    <p>Correct guesses {{ object.guesses }}</p>
-    <p>Winner {{ object.winner }}</p>
+    {% with 'flags/'|add:object.id|add:'.png' as flag %}
+    <img src="{% static flag %}">
+    {% endwith %}
   </div>
 {% endblock %}

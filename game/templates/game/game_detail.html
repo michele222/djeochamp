@@ -1,0 +1,56 @@
+{% extends "master.html" %}
+
+{% load static %}
+
+{% block title %}
+Game details
+{% endblock %}
+
+{% block content %}
+<div class="mycard">
+    <h1>{{ object.title }}</h1>
+    <p>ID {{ object.id }}</p>
+    <p>Date created {{ object.created }}</p>
+    <p>Correct guesses {{ object.guesses }}</p>
+    <p>Winner {{ object.winner }}</p>
+    <div class="container">
+        {% for round in object.rounds.all %}
+        <div class="row bg-secondary text-white">
+            <div class="col">Round {{ round.id }}</div>
+        </div>
+        {% for match in round.matches.all %}
+        <div class="row">
+            <div class="col" align="right">
+                {{ match.country1.name }}
+                {% with 'flags/'|add:match.country1.id|add:'.png' as flag %}
+                <img src="{% static flag %}" class="rounded" style="height:20px; width:30px;">
+                {% endwith %}
+            </div>
+            <div class="col" align="left">
+                {% with 'flags/'|add:match.country2.id|add:'.png' as flag %}
+                <img src="{% static flag %}" class="rounded" style="height:20px; width:30px;">
+                {% endwith %}
+                {{ match.country2.name }}
+            </div>
+        </div>
+        {% endfor %}
+        <div class="row">
+            <div class="col">
+                <form action="{% url 'matches.create' object.id round.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-link btn-sm">New match</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="row bg-secondary text-white">
+            <div class="col">
+                <form action="{% url 'rounds.create' object.id %}" method="post" style="display: inline;">
+                    {% csrf_token%}
+                    <button type="submit" class="btn btn-link btn-sm">New round</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
