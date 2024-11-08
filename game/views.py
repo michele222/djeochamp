@@ -70,8 +70,26 @@ def create_round(request, id):
 
 def create_match(request, id, round_id):
     round = Round.objects.get(id=round_id)
-    countries = list(Country.objects.all())
-    random_countries = random.sample(countries, 2)
-    match = Match(round=round, country1=random_countries[0], country2=random_countries[1])
-    match.save()
+    if round.number == 1:
+        countries = list(Country.objects.all())
+    else:
+        countries = []
+        prev_round = Round.objects.get(championship=id, number=round.number - 1)
+        for match in Match.objects.filter(round=prev_round.id):
+            countries.extend(list(match.winners.all()))
+    random.shuffle(countries)
+    if len(countries) % 2 == 1:
+        match = Match(round=round)
+        match.save()
+        match.countries.add(countries[-1])
+    for a,b in zip(countries[0::2], countries[1::2]):
+        match = Match(round=round)
+        match.save()
+        match.countries.add(a, b)
+    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
+
+def match_win(request, id, match_id, country_id):
+    match = Match.objects.get(id=match_id)
+    country = Country.objects.get(id=country_id)
+    match.winners.add(country)
     return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))

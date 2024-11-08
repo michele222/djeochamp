@@ -16,22 +16,32 @@ Game details
     <div class="container">
         {% for round in object.rounds.all %}
         <div class="row bg-secondary text-white">
-            <div class="col">Round {{ round.id }}</div>
+            <div class="col">{{ round }}</div>
         </div>
         {% for match in round.matches.all %}
         <div class="row">
-            <div class="col" align="right">
-                {{ match.country1.name }}
-                {% with 'flags/'|add:match.country1.id|add:'.png' as flag %}
+            {% for country in match.countries.all %}
+            <div align="{% cycle 'right' 'left' %}"
+                 {% if country in match.winners.all %}
+                    class="col bg-success"
+                 {% else %}
+                    class="col"
+                 {% endif %}
+                 onclick="location.href='{% url 'matches.win' object.id match.id country.id %}';">
+                {% if forloop.first %}
+                <a class="link-dark link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="{% url 'countries.detail' country.id %}">{{ country.name }}</a>
+                {% endif %}
+                {% with 'flags/'|add:country.id|add:'.png' as flag %}
                 <img src="{% static flag %}" class="rounded" style="height:20px; width:30px;">
                 {% endwith %}
+                {% if not forloop.first %}
+                <a class="link-dark link-underline link-underline-opacity-0 link-underline-opacity-100-hover" href="{% url 'countries.detail' country.id %}">{{ country.name }}</a>
+                {% endif %}
             </div>
-            <div class="col" align="left">
-                {% with 'flags/'|add:match.country2.id|add:'.png' as flag %}
-                <img src="{% static flag %}" class="rounded" style="height:20px; width:30px;">
-                {% endwith %}
-                {{ match.country2.name }}
-            </div>
+            {% if forloop.first and forloop.last %}
+            <div class="col" align="left">BYE</div>
+            {% endif %}
+            {% endfor %}
         </div>
         {% endfor %}
         <div class="row">

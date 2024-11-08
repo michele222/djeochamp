@@ -10,4 +10,5 @@ urlpatterns = [
     path('countries/<str:id>/details/', views.CountryDetailView.as_view(), name='countries.detail'),
     path('<int:id>/rounds/create/', views.create_round, name='rounds.create'),
     path('<int:id>/rounds/<int:round_id>/match/create/', views.create_match, name='matches.create'),
+    path('<int:id>/match/<int:match_id>/win/<str:country_id>', views.match_win, name='matches.win'),
 ]

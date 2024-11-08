@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Max
 
 
 class Parameter(models.Model):
@@ -30,21 +31,32 @@ class Championship(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="championships")
     guesses = models.PositiveSmallIntegerField(null=True, blank=True)
-    winner = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="championship_wins", null=True,
-                               blank=True)
+    winner = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="championship_wins", null=True)
 
 
 class Round(models.Model):
     championship = models.ForeignKey(Championship, on_delete=models.CASCADE, related_name="rounds")
-    parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE, related_name="rounds", null=True, blank=True)
+    number = models.PositiveSmallIntegerField()
+    parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE, related_name="rounds", null=True)
 
+    def __str__(self):
+        return f'Round {self.number}'
+
+    def save(self, *args, **kwargs):
+        if not self.number:
+            self.number = 1 + Round.objects.filter(championship=self.championship).aggregate(Max("number", default=0))['number__max']
+        return super().save(*args, **kwargs)
 
 class Match(models.Model):
     round = models.ForeignKey(Round, on_delete=models.CASCADE, related_name="matches")
-    country1 = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="matches1")
-    country2 = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="matches2")
-    winner = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="match_wins", null=True, blank=True)
-    guess = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="match_guesses", null=True, blank=True)
+    countries = models.ManyToManyField(Country, related_name="match_plays")
+    winners = models.ManyToManyField(Country, related_name="match_wins")
+    guess = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="match_guesses", null=True)
 
     def __str__(self):
-        return f'{self.country1.name} - {self.country2.name}'
+        num_countries = self.countries.count()
+        if num_countries == 0:
+            return 'empty match'
+        if num_countries == 1:
+            return f'{self.countries.all()[0].name} - BYE'
+        return f'{self.countries.all()[0].name} - {self.countries.all()[1].name}'
