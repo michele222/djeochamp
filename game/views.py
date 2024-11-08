@@ -61,15 +61,17 @@ class CountryDetailView(LoginRequiredMixin, DetailView):
         return Country.objects.get(id=self.kwargs['id'])
 
 
+# def create_round(request, id):
+#     championship = Championship.objects.get(id=id)
+#     round = Round(championship=championship)
+#     round.save()
+#     return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
+
+
 def create_round(request, id):
     championship = Championship.objects.get(id=id)
     round = Round(championship=championship)
     round.save()
-    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
-
-
-def create_match(request, id, round_id):
-    round = Round.objects.get(id=round_id)
     if round.number == 1:
         countries = list(Country.objects.all())
     else:
@@ -82,6 +84,7 @@ def create_match(request, id, round_id):
         match = Match(round=round)
         match.save()
         match.countries.add(countries[-1])
+        match.winners.add(match.countries.all()[0])
     for a,b in zip(countries[0::2], countries[1::2]):
         match = Match(round=round)
         match.save()

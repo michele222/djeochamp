@@ -1,0 +1,13 @@
+{% load static %}
+
+{% if align == "right" %}
+<a class="link-dark link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
+   href="{% url 'countries.detail' country.id %}">{{ country.name }}</a>
+{% endif %}
+{% with 'flags/'|add:country.id|add:'.png' as flag %}
+<img src="{% static flag %}" class="rounded" style="height:20px; width:30px;">
+{% endwith %}
+{% if align == "left" %}
+<a class="link-dark link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
+   href="{% url 'countries.detail' country.id %}">{{ country.name }}</a>
+{% endif %}
