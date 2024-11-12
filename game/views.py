@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 
 from .forms import GameForm
-from .models import Championship, Country, Round, Match
+from .models import Championship, Country, Round, Match, Parameter
 
 
 class GamesView(LoginRequiredMixin, ListView):
@@ -69,30 +69,43 @@ class CountryDetailView(LoginRequiredMixin, DetailView):
 
 
 def create_round(request, id):
+    response = HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
     championship = Championship.objects.get(id=id)
-    round = Round(championship=championship)
-    round.save()
-    if round.number == 1:
-        countries = list(Country.objects.all())
-    else:
+    if championship.winner:
+        return response
+    if championship.rounds.all().exists():
         countries = []
-        prev_round = Round.objects.get(championship=id, number=round.number - 1)
+        prev_round = Round.objects.filter(championship=id).latest("number")
         for match in Match.objects.filter(round=prev_round.id):
             countries.extend(list(match.winners.all()))
-    random.shuffle(countries)
-    if len(countries) % 2 == 1:
-        match = Match(round=round)
-        match.save()
-        match.countries.add(countries[-1])
-        match.winners.add(match.countries.all()[0])
-    for a,b in zip(countries[0::2], countries[1::2]):
-        match = Match(round=round)
-        match.save()
-        match.countries.add(a, b)
-    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
+    else:
+        countries = list(Country.objects.all())
+
+    if len(countries) == 1:
+        championship.winner = countries[0]
+        championship.save()
+    else:
+        round = Round(championship=championship)
+        parameters = Parameter.objects.all()
+        round.parameter = random.choice(parameters)
+        round.save()
+        random.shuffle(countries)
+        if len(countries) % 2 == 1:
+            match = Match(round=round)
+            match.save()
+            match.countries.add(countries[-1])
+            match.winners.add(match.countries.all()[0])
+        for a, b in zip(countries[0::2], countries[1::2]):
+            match = Match(round=round)
+            match.save()
+            match.countries.add(a, b)
+    return response
+
 
 def match_win(request, id, match_id, country_id):
     match = Match.objects.get(id=match_id)
+    if match.round.championship.winner or not match.round.is_latest:
+        return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
     country = Country.objects.get(id=country_id)
     match.winners.add(country)
-    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
+    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]) + f'#match_{match_id}')

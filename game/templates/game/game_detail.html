@@ -1,6 +1,7 @@
 {% extends "master.html" %}
 
 {% load static %}
+{% load extra_tags %}
 
 {% block title %}
 Game details
@@ -11,35 +12,48 @@ Game details
     <h1>{{ object.title }}</h1>
     <p>Date created {{ object.created }}</p>
     <p>Correct guesses {{ object.guesses }}</p>
-    <p>Winner {{ object.winner }}</p>
+    {% if object.winner %}
+    <p>Winner {% include "country_snippet.html" with country=object.winner align="left" %}</p>
+    {% else %}
     <p>
     <form action="{% url 'rounds.create' object.id %}" method="post">
         {% csrf_token %}
         <button type="submit" class="btn btn-link btn-sm">New round</button>
     </form>
     </p>
+    {% endif %}
     <table class="table table-striped table-bordered align-middle">
-        {% for round in object.rounds.all %}
+        {% for round in object.rounds.all|order_by:'-number' %}
         <thead>
         <tr>
-            <th colspan="2">{{ round }}</th>
+            <th class="table-dark" colspan="4">{{ round }}
+                {% if round.parameter %}
+                - {{ round.parameter }}
+                {% endif %}
+            </th>
         </tr>
         </thead>
         <tbody>
         {% for match in round.matches.all %}
-        <tr>
+        <tr id="match_{{ match.id }}">
             {% for country in match.countries.all %}
-            <td align="{% cycle 'right' 'left' as align %}" class="w-50
-                {% if country in match.winners.all %}
-                bg-success
+                {% cycle 'right' 'left' as align silent %}
+                {% if align == 'right' %}
+                <td>{{ match.score|get_item:country.id }}</td>
                 {% endif %}
-                "
-                onclick="location.href='{% url 'matches.win' object.id match.id country.id %}';">
-                {% include "country_snippet.html" with country=country align=align %}
-            </td>
-            {% if forloop.first and forloop.last %}
-            <td align="left" class="w-50">BYE</td>
-            {% endif %}
+                <td align="{{ align }}" class="w-50
+                    {% if country in match.winners.all %}
+                    bg-success
+                    {% endif %}
+                    "
+                    onclick="location.href='{% url 'matches.win' object.id match.id country.id %}';">
+                    {% include "country_snippet.html" with country=country align=align %}
+                </td>
+                {% if forloop.first and forloop.last %}
+                <td align="left" class="w-50" colspan="2">BYE</td>
+                {% elif align == 'left' %}
+                <td>{{ match.score|get_item:country.id }}</td>
+                {% endif %}
             {% endfor %}
             {% resetcycle %}
         </tr>
