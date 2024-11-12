@@ -102,6 +102,12 @@ def create_round(request, id):
     return response
 
 
+def process_round(request, id, round_id):
+    round = Round.objects.get(id=round_id)
+    round.process()
+    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
+
+
 def match_win(request, id, match_id, country_id):
     match = Match.objects.get(id=match_id)
     if match.round.championship.winner or not match.round.is_latest:

@@ -60,6 +60,12 @@ class Round(models.Model):
     def is_latest(self):
         return self.number == self.championship.rounds.latest("number").number
 
+    def process(self):
+        if self.championship.winner or not self.is_latest:
+            return
+        for match in self.matches.all():
+            match.set_win()
+
 class Match(models.Model):
     round = models.ForeignKey(Round, on_delete=models.CASCADE, related_name="matches")
     countries = models.ManyToManyField(Country, related_name="match_plays")
@@ -83,3 +89,11 @@ class Match(models.Model):
         for country in self.countries.all():
             score_dict[country.id] = CountryParameter.objects.get(country=country.id, parameter=self.round.parameter.id).value
         return score_dict
+
+    def set_win(self):
+        if self.round.championship.winner or not self.round.is_latest:
+            return
+        max_value = CountryParameter.objects.filter(country__in=self.countries.all()).aggregate(Max("value"))['value__max']
+        winning_countries = CountryParameter.objects.filter(country__in=self.countries.all(), value=max_value).values_list('country', flat=True)
+        for country in winning_countries:
+            self.winners.add(country)
