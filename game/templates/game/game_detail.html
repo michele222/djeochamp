@@ -45,20 +45,24 @@ Game details
             {% for country in match.countries.all %}
             {% cycle 'right' 'left' as align silent %}
             {% if align == 'right' %}
-            <td>{{ match.score|get_item:country.id }}</td>
+            <td {% if country == match.guess %} class="bg-warning" {% endif %}>
+                {{ match.score|get_item:country.id }}
+            </td>
             {% endif %}
-            <td align="{{ align }}" class="w-50
+            <td align="{{ align }}" class="w-25
                     {% if country in match.winners.all %}
                     bg-success
                     {% endif %}
                     "
-                onclick="location.href='{% url 'matches.win' object.id match.id country.id %}';">
+                onclick="location.href='{% url 'matches.guess' object.id match.id country.id %}';">
                 {% include "country_snippet.html" with country=country align=align %}
             </td>
             {% if forloop.first and forloop.last %}
-            <td align="left" class="w-50" colspan="2">BYE</td>
+            <td align="left" class="w-25" colspan="2">BYE</td>
             {% elif align == 'left' %}
-            <td>{{ match.score|get_item:country.id }}</td>
+            <td align="right" {% if country == match.guess %} class="bg-warning" {% endif %}>
+                {{ match.score|get_item:country.id }}
+            </td>
             {% endif %}
             {% endfor %}
             {% resetcycle %}

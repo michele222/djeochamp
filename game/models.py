@@ -6,10 +6,12 @@ from django.db.models import Max
 class Parameter(models.Model):
     name = models.CharField(max_length=40)
     unit = models.CharField(max_length=10, blank=True)
+    decimals = models.PositiveSmallIntegerField(default=0)
     active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
+
 
 class Country(models.Model):
     id = models.CharField(max_length=3, primary_key=True)
@@ -32,6 +34,14 @@ class CountryParameter(models.Model):
     def __str__(self):
         return f'{self.country.name} - {self.parameter.name}'
 
+    class Meta:
+        ordering = ['parameter', '-value']
+
+    @property
+    def formatted_value(self):
+        return f'{self.value:0,.{self.parameter.decimals}f} {self.parameter.unit}'
+
+
 class Championship(models.Model):
     title = models.CharField(max_length=50)
     created = models.DateTimeField(auto_now_add=True)
@@ -53,7 +63,8 @@ class Round(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.number:
-            self.number = 1 + Round.objects.filter(championship=self.championship).aggregate(Max("number", default=0))['number__max']
+            self.number = 1 + Round.objects.filter(championship=self.championship).aggregate(Max("number", default=0))[
+                'number__max']
         return super().save(*args, **kwargs)
 
     @property
@@ -65,6 +76,7 @@ class Round(models.Model):
             return
         for match in self.matches.all():
             match.set_win()
+
 
 class Match(models.Model):
     round = models.ForeignKey(Round, on_delete=models.CASCADE, related_name="matches")
@@ -81,19 +93,25 @@ class Match(models.Model):
         return f'{self.countries.all()[0].name} - {self.countries.all()[1].name}'
 
     class Meta:
+        ordering = ['id']
         verbose_name_plural = "matches"
 
     @property
     def score(self):
         score_dict = {}
         for country in self.countries.all():
-            score_dict[country.id] = CountryParameter.objects.get(country=country.id, parameter=self.round.parameter.id).value
+            score_dict[country.id] = CountryParameter.objects.get(country=country.id,
+                                                                  parameter=self.round.parameter.id).formatted_value
         return score_dict
 
     def set_win(self):
         if self.round.championship.winner or not self.round.is_latest:
             return
-        max_value = CountryParameter.objects.filter(country__in=self.countries.all()).aggregate(Max("value"))['value__max']
-        winning_countries = CountryParameter.objects.filter(country__in=self.countries.all(), value=max_value).values_list('country', flat=True)
+        max_value = \
+        CountryParameter.objects.filter(country__in=self.countries.all(),
+                                        parameter=self.round.parameter.id).aggregate(Max("value"))['value__max']
+        winning_countries = CountryParameter.objects.filter(country__in=self.countries.all(),
+                                                            parameter=self.round.parameter.id,
+                                                            value=max_value).values_list('country', flat=True)
         for country in winning_countries:
             self.winners.add(country)

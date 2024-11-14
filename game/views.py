@@ -61,11 +61,19 @@ class CountryDetailView(LoginRequiredMixin, DetailView):
         return Country.objects.get(id=self.kwargs['id'])
 
 
-# def create_round(request, id):
-#     championship = Championship.objects.get(id=id)
-#     round = Round(championship=championship)
-#     round.save()
-#     return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
+class ParametersView(LoginRequiredMixin, ListView):
+    model = Parameter
+    template_name = 'game/parameter_list.html'
+    login_url = reverse_lazy('login')
+
+
+class ParameterDetailView(LoginRequiredMixin, DetailView):
+    model = Parameter
+    template_name = 'game/parameter_detail.html'
+    login_url = reverse_lazy('login')
+
+    def get_object(self):
+        return Parameter.objects.get(id=self.kwargs['id'])
 
 
 def create_round(request, id):
@@ -86,7 +94,7 @@ def create_round(request, id):
         championship.save()
     else:
         round = Round(championship=championship)
-        parameters = Parameter.objects.all()
+        parameters = Parameter.objects.filter(active=True)
         round.parameter = random.choice(parameters)
         round.save()
         random.shuffle(countries)
@@ -114,4 +122,14 @@ def match_win(request, id, match_id, country_id):
         return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
     country = Country.objects.get(id=country_id)
     match.winners.add(country)
+    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]) + f'#match_{match_id}')
+
+
+def match_guess(request, id, match_id, country_id):
+    match = Match.objects.get(id=match_id)
+    if match.round.championship.winner or not match.round.is_latest:
+        return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
+    country = Country.objects.get(id=country_id)
+    match.guess = country
+    match.save()
     return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]) + f'#match_{match_id}')

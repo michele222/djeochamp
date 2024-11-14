@@ -17,6 +17,7 @@
         <a class="btn btn-outline-light me-1" href="{% url 'games.create' %}">New game</a>
         <a class="btn btn-outline-light me-1" href="{% url 'games.list' %}">Games</a>
         <a class="btn btn-outline-light me-1" href="{% url 'countries.list' %}">Countries</a>
+        <a class="btn btn-outline-light me-1" href="{% url 'parameters.list' %}">Parameters</a>
         <form method="post" style="display: inline;" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-light me-1">Logout</button>
