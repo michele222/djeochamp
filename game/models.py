@@ -16,7 +16,7 @@ class Parameter(models.Model):
 class Country(models.Model):
     id = models.CharField(max_length=3, primary_key=True)
     name = models.CharField(max_length=40)
-    parameters = models.ManyToManyField(Parameter, through="CountryParameter")
+    # parameters = models.ManyToManyField(Parameter, through="CountryParameter")
 
     def __str__(self):
         return self.name
@@ -27,7 +27,7 @@ class Country(models.Model):
 
 
 class CountryParameter(models.Model):
-    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="parameters")
     parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE, related_name="countries")
     value = models.DecimalField(max_digits=20, decimal_places=5)
 
@@ -51,6 +51,14 @@ class Championship(models.Model):
 
     def __str__(self):
         return f'{self.title} (by {self.user})'
+
+    def set_guesses(self):
+        n_guesses = 0
+        for round in self.rounds.all():
+            for match in round.matches.all():
+                n_guesses += match.correct_guess()
+        self.guesses = n_guesses
+        self.save()
 
 
 class Round(models.Model):
@@ -115,3 +123,8 @@ class Match(models.Model):
                                                             value=max_value).values_list('country', flat=True)
         for country in winning_countries:
             self.winners.add(country)
+
+    def correct_guess(self):
+        if self.guess in self.winners.all():
+            return 1
+        return 0

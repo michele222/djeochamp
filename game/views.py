@@ -84,10 +84,13 @@ def create_round(request, id):
     if championship.rounds.all().exists():
         countries = []
         prev_round = Round.objects.filter(championship=id).latest("number")
+        prev_round.process()
         for match in Match.objects.filter(round=prev_round.id):
             countries.extend(list(match.winners.all()))
     else:
         countries = list(Country.objects.all())
+
+    championship.set_guesses()
 
     if len(countries) == 1:
         championship.winner = countries[0]

@@ -30,12 +30,6 @@ Game details
                 {% if round.parameter %}
                 - {{ round.parameter }}
                 {% endif %}
-                {% if round.is_latest %}
-                <form style="display: inline;" action="{% url 'rounds.process' object.id round.id %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-link btn-sm">Process</button>
-                </form>
-                {% endif %}
             </th>
         </tr>
         </thead>
@@ -46,7 +40,11 @@ Game details
             {% cycle 'right' 'left' as align silent %}
             {% if align == 'right' %}
             <td {% if country == match.guess %} class="bg-warning" {% endif %}>
+                {% if round.is_latest and not object.winner %}
+                <a href="{% url 'matches.guess' object.id match.id country.id %}">Guess</a>
+                {% else %}
                 {{ match.score|get_item:country.id }}
+                {% endif %}
             </td>
             {% endif %}
             <td align="{{ align }}" class="w-25
@@ -54,14 +52,18 @@ Game details
                     bg-success
                     {% endif %}
                     "
-                onclick="location.href='{% url 'matches.guess' object.id match.id country.id %}';">
+            >
                 {% include "country_snippet.html" with country=country align=align %}
             </td>
             {% if forloop.first and forloop.last %}
             <td align="left" class="w-25" colspan="2">BYE</td>
             {% elif align == 'left' %}
             <td align="right" {% if country == match.guess %} class="bg-warning" {% endif %}>
+                {% if round.is_latest and not object.winner %}
+                <a href="{% url 'matches.guess' object.id match.id country.id %}">Guess</a>
+                {% else %}
                 {{ match.score|get_item:country.id }}
+                {% endif %}
             </td>
             {% endif %}
             {% endfor %}
