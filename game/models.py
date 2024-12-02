@@ -1,3 +1,5 @@
+import random
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Max
@@ -16,6 +18,7 @@ class Parameter(models.Model):
 class Country(models.Model):
     id = models.CharField(max_length=3, primary_key=True)
     name = models.CharField(max_length=40)
+
     # parameters = models.ManyToManyField(Parameter, through="CountryParameter")
 
     def __str__(self):
@@ -60,10 +63,37 @@ class Championship(models.Model):
         self.guesses = n_guesses
         self.save()
 
+    def create_round(self):
+        if self.rounds.all().exists():
+            countries = []
+            prev_round = Round.objects.filter(championship=self.id).latest("number")
+            prev_round.process()
+            for match in Match.objects.filter(round=prev_round.id):
+                countries.extend(list(match.winners.all()))
+        else:
+            countries = list(Country.objects.all())
+
+        self.set_guesses()
+
+        if len(countries) == 1:
+            self.winner = countries[0]
+            self.save()
+        else:
+            parameters = Parameter.objects.filter(active=True)
+            round = self.rounds.create(parameter=random.choice(parameters))
+            random.shuffle(countries)
+            if len(countries) % 2 == 1:
+                match = round.matches.create()
+                match.countries.add(countries[-1])
+                match.winners.add(match.countries.all()[0])
+            for a, b in zip(countries[0::2], countries[1::2]):
+                match = round.matches.create()
+                match.countries.add(a, b)
+
 
 class Round(models.Model):
     championship = models.ForeignKey(Championship, on_delete=models.CASCADE, related_name="rounds")
-    number = models.PositiveSmallIntegerField()
+    number = models.PositiveSmallIntegerField(default=0)
     parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE, related_name="rounds", null=True)
 
     def __str__(self):
@@ -116,8 +146,8 @@ class Match(models.Model):
         if self.round.championship.winner or not self.round.is_latest:
             return
         max_value = \
-        CountryParameter.objects.filter(country__in=self.countries.all(),
-                                        parameter=self.round.parameter.id).aggregate(Max("value"))['value__max']
+            CountryParameter.objects.filter(country__in=self.countries.all(),
+                                            parameter=self.round.parameter.id).aggregate(Max("value"))['value__max']
         winning_countries = CountryParameter.objects.filter(country__in=self.countries.all(),
                                                             parameter=self.round.parameter.id,
                                                             value=max_value).values_list('country', flat=True)

@@ -1,5 +1,3 @@
-import random
-
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
@@ -77,40 +75,10 @@ class ParameterDetailView(LoginRequiredMixin, DetailView):
 
 
 def create_round(request, id):
-    response = HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
     championship = Championship.objects.get(id=id)
-    if championship.winner:
-        return response
-    if championship.rounds.all().exists():
-        countries = []
-        prev_round = Round.objects.filter(championship=id).latest("number")
-        prev_round.process()
-        for match in Match.objects.filter(round=prev_round.id):
-            countries.extend(list(match.winners.all()))
-    else:
-        countries = list(Country.objects.all())
-
-    championship.set_guesses()
-
-    if len(countries) == 1:
-        championship.winner = countries[0]
-        championship.save()
-    else:
-        round = Round(championship=championship)
-        parameters = Parameter.objects.filter(active=True)
-        round.parameter = random.choice(parameters)
-        round.save()
-        random.shuffle(countries)
-        if len(countries) % 2 == 1:
-            match = Match(round=round)
-            match.save()
-            match.countries.add(countries[-1])
-            match.winners.add(match.countries.all()[0])
-        for a, b in zip(countries[0::2], countries[1::2]):
-            match = Match(round=round)
-            match.save()
-            match.countries.add(a, b)
-    return response
+    if not championship.winner:
+        championship.create_round()
+    return HttpResponseRedirect(reverse_lazy('games.detail', args=[id]))
 
 
 def process_round(request, id, round_id):
