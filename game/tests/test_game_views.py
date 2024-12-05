@@ -1,8 +1,5 @@
 import pytest
 
-from django.contrib.auth.models import User
-
-from game.models import Championship
 from .factories import UserFactory, GameFactory
 
 @pytest.fixture
